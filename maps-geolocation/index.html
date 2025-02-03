@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
- 
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,13 +11,14 @@
         #map {
             height: 500px;
         }
+
         textarea[name="coords"] {
             width: 80vw;
             height: 200px;
         }
     </style>
 </head>
- 
+
 <body>
     <div id="map"></div>
     <button id="locate">Start Tracking</button>
@@ -27,31 +28,36 @@
     <!-- Make sure you put this AFTER Leaflet's CSS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
- 
+
     <script>var map = new L.Map('map', {
-        crs: L.CRS.EPSG3857,
-        continuousWorld: true,
-        worldCopyJump: false
-      });
-      const url = 'https://wmts20.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg';
-      const tilelayer = new L.tileLayer(url);
-      map.addLayer(tilelayer);
-      map.setView(L.latLng(46.57591, 7.84956), 8);
-
-      const logs = document.querySelector('textarea[name="coords"]');
-
-     
-      const locateButton = document.querySelector('#locate');
-      locateButton.addEventListener('click', () => {
-        navigator.geolocation.watchPosition(position => {
-          console.log(position);
-          logs.textContent += `Location: ${position.coords.latitude} lat, ${position.coords.longitude} long\n`;
-          logs.scrollTop = logs.scrollHeight;
-          map.setView(L.latLng(position.coords.latitude, position.coords.longitude), 12);
-          L.circle([position.coords.latitude, position.coords.longitude], {radius: 2000}).addTo(map);
+            crs: L.CRS.EPSG3857,
+            continuousWorld: true,
+            worldCopyJump: false
         });
-      });
-      </script>
+        const url = 'https://wmts20.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg';
+        const tilelayer = new L.tileLayer(url);
+        map.addLayer(tilelayer);
+        map.setView(L.latLng(46.57591, 7.84956), 8);
+
+        const logs = document.querySelector('textarea[name="coords"]');
+
+        let polyline = L.polyline([], { color: 'blue' }).addTo(map);
+
+
+
+        const locateButton = document.querySelector('#locate');
+        locateButton.addEventListener('click', () => {
+            navigator.geolocation.watchPosition(position => {
+                console.log(position);
+                logs.textContent += `Location: ${position.coords.latitude} lat, ${position.coords.longitude} long\n`;
+                logs.scrollTop = logs.scrollHeight;
+                polyline.addLatLng([position.coords.latitude, position.coords.longitude]); // Neue Position zur Linie hinzufügen
+                map.setView(L.latLng(position.coords.latitude, position.coords.longitude), 12);
+
+
+            });
+        });
+    </script>
 </body>
- 
+
 </html>
