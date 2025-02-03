@@ -20,7 +20,7 @@
  
 <body>
     <div id="map"></div>
-    <button id="locate">Locate Me</button>
+    <button id="locate">Start Tracking</button>
 
     <textarea name="coords" id="coords"></textarea>
 
@@ -43,7 +43,7 @@
      
       const locateButton = document.querySelector('#locate');
       locateButton.addEventListener('click', () => {
-        navigator.geolocation.getCurrentPosition(position => {
+        navigator.geolocation.watchPosition(position => {
           console.log(position);
           logs.textContent += `Location: ${position.coords.latitude} lat, ${position.coords.longitude} long\n`;
           logs.scrollTop = logs.scrollHeight;
