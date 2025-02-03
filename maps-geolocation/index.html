@@ -25,6 +25,9 @@
 
     <textarea name="coords" id="coords"></textarea>
 
+    <div id="speed">Speed: 0 m/s</div>
+
+
     <!-- Make sure you put this AFTER Leaflet's CSS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -45,26 +48,62 @@
 
         let marker;
 
+        const speedDisplay = document.querySelector('#speed'); // Verweis auf das Geschwindigkeits-Element
+
+        let lastPosition = null;
+        let lastTime = null;
+
+
+        function calculateSpeed(lat1, lon1, lat2, lon2, time1, time2) {
+            const R = 6371000; // Radius der Erde in Metern
+            const latitude1 = lat1 * Math.PI / 180;
+            const latitude2 = lat2 * Math.PI / 180;
+            const deltaLatitude = (lat2 - lat1) * Math.PI / 180;
+            const deltaLongitude = (lon2 - lon1) * Math.PI / 180;
+
+            const a = Math.sin(deltaLatitude / 2) * Math.sin(deltaLatitude / 2) +
+                Math.cos(latitude1) * Math.cos(latitude2) *
+                Math.sin(deltaLongitude / 2) * Math.sin(deltaLongitude / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            const distance = R * c; // in Metern
+
+            const timeDiff = (time2 - time1) / 1000; // Zeitdifferenz in Sekunden
+            return distance / timeDiff; // Geschwindigkeit in m/s
+        }
+
+
+
 
 
 
         const locateButton = document.querySelector('#locate');
         locateButton.addEventListener('click', () => {
             navigator.geolocation.watchPosition(position => {
-    const lat = position.coords.latitude;
-    const lng = position.coords.longitude;
-    logs.textContent += `Location: ${lat} lat, ${lng} long\n`;
-    logs.scrollTop = logs.scrollHeight;
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                const time = position.timestamp;
 
-    if (!marker) {
-        marker = L.marker([lat, lng]).addTo(map);
-    } else {
-        marker.setLatLng([lat, lng]);
-    }
+                logs.textContent += `Location: ${lat} lat, ${lng} long\n`;
+                logs.scrollTop = logs.scrollHeight;
 
-    polyline.addLatLng([lat, lng]); // Neue Position zur Linie hinzufügen
-    map.setView([lat, lng], 12);
-});
+                if (lastPosition && lastTime) {
+                    const speed = calculateSpeed(lastPosition.lat, lastPosition.lng, lat, lng, lastTime, time);
+                    speedDisplay.textContent = `Speed: ${speed.toFixed(2)} m/s`;  // Geschwindigkeit anzeigen
+                }
+
+                if (!marker) {
+                    marker = L.marker([lat, lng]).addTo(map);
+                } else {
+                    marker.setLatLng([lat, lng]);
+                }
+
+                polyline.addLatLng([lat, lng]);
+                map.setView([lat, lng], 12);
+
+                // Speichern der aktuellen Position und Zeit
+                lastPosition = { lat, lng };
+                lastTime = time;
+            });
 
         });
     </script>
