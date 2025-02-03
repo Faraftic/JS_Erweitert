@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webcam</title>
+</head>
+<style>
+    #webcam {
+        filter: saturate(100%) blur(3px) sepia(150%) hue-rotate(90deg);
+        transform: scaleX(-1);
+    }
+</style>
+
+<body>
+    <video id="webcam"></video>
+    <script>
+        console.log('Hello World');
+
+        async function getWebCamStream() {
+            const videoElem = document.querySelector('#webcam');
+            videoElem.srcObject = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    width: 500,
+                    height: 500
+                }
+            });
+
+            videoElem.onloadedmetadata = () => {
+                videoElem.play();
+            };
+
+            console.log(webcamStream);
+        }
+
+        getWebCamStream();
+
+
+
+    </script>
+</body>
+
+</html>
