@@ -43,19 +43,29 @@
 
         let polyline = L.polyline([], { color: 'blue' }).addTo(map);
 
+        let marker;
+
+
 
 
         const locateButton = document.querySelector('#locate');
         locateButton.addEventListener('click', () => {
             navigator.geolocation.watchPosition(position => {
-                console.log(position);
-                logs.textContent += `Location: ${position.coords.latitude} lat, ${position.coords.longitude} long\n`;
-                logs.scrollTop = logs.scrollHeight;
-                polyline.addLatLng([position.coords.latitude, position.coords.longitude]); // Neue Position zur Linie hinzufügen
-                map.setView(L.latLng(position.coords.latitude, position.coords.longitude), 12);
+    const lat = position.coords.latitude;
+    const lng = position.coords.longitude;
+    logs.textContent += `Location: ${lat} lat, ${lng} long\n`;
+    logs.scrollTop = logs.scrollHeight;
 
+    if (!marker) {
+        marker = L.marker([lat, lng]).addTo(map);
+    } else {
+        marker.setLatLng([lat, lng]);
+    }
 
-            });
+    polyline.addLatLng([lat, lng]); // Neue Position zur Linie hinzufügen
+    map.setView([lat, lng], 12);
+});
+
         });
     </script>
 </body>
