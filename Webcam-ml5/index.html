@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webcam Hand Tracking</title>
+</head>
+<style>
+    #webcam {
+        transform: scaleX(-1);
+        border: 10px solid #481eab;
+        border-radius: 5px;
+        filter: saturate(100%);
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+
+    canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        pointer-events: none;
+    }
+</style>
+
+<body>
+    <video id="webcam" autoplay></video>
+    <canvas id="canvas"></canvas>
+
+    <!-- Updated ml5 script link -->
+    <script src="https://unpkg.com/ml5@1/dist/ml5.js"></script>
+
+    <script>
+        window.onload = () => {
+            console.log('Hello World');
+
+            let handPoseModel;
+            let videoElem, ctx, canvas;
+            let lastX = null, lastY = null;
+
+            async function getWebStream() {
+                try {
+                    videoElem = document.querySelector('#webcam');
+                    canvas = document.querySelector('#canvas');
+                    ctx = canvas.getContext('2d');
+
+                    const stream = await navigator.mediaDevices.getUserMedia({
+                        video: { width: 640, height: 480 }
+                    });
+
+                    videoElem.srcObject = stream;
+
+                    videoElem.onloadedmetadata = () => {
+                        videoElem.play();
+                        canvas.width = videoElem.videoWidth;
+                        canvas.height = videoElem.videoHeight;
+                        loadHandPose();
+                    };
+                } catch (error) {
+                    console.error("Fehler beim Zugriff auf die Kamera:", error);
+                    alert("Kamera-Zugriff fehlgeschlagen. Überprüfe die Berechtigungen!");
+                }
+            }
+
+            async function loadHandPose() {
+                // Check if ml5 is defined
+                if (typeof ml5 === 'undefined') {
+                    console.error('ml5 is not defined. Ensure the script is loaded correctly.');
+                    return;
+                }
+
+                console.log("Lade HandPose-Modell...");
+                handPoseModel = await ml5.handPose(videoElem);
+                console.log("HandPose Modell geladen:", handPoseModel);
+                detectHands();
+            }
+
+            async function detectHands() {
+                if (!handPoseModel) return;
+
+                const predictHands = async () => {
+                    const predictions = await handPoseModel.estimateHands(videoElem);
+                    gotHands(predictions);
+                    requestAnimationFrame(predictHands); // Continue the tracking
+                };
+
+                predictHands(); // Start the predictions
+            }
+
+            function gotHands(results) {
+                if (results.length > 0) {
+                    const indexFinger = results[0].landmarks[8]; // Spitze des Zeigefingers
+                    draw(indexFinger[0], indexFinger[1]);
+                }
+            }
+
+            function draw(x, y) {
+                if (lastX !== null && lastY !== null) {
+                    ctx.beginPath();
+                    ctx.moveTo(lastX, lastY);
+                    ctx.lineTo(x, y);
+                    ctx.strokeStyle = "red";
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                }
+                lastX = x;
+                lastY = y;
+            }
+
+            getWebStream();
+        };
+    </script>
+</body>
+
+</html>
