@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPS Tracker</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://cdn.jsdelivr.net/npm/proj4@2.7.4/dist/proj4.js"></script>
+    <style>
+        #map {
+            height: 500px;
+        }
+        textarea[name="coords"] {
+            width: 80vw;
+            height: 200px;
+        }
+        #speed, #altitude, #distance, #maxSpeed {
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+    <button id="locate">Start Tracking</button>
+    <textarea name="coords" id="coords"></textarea>
+    <div id="speed">Speed: 0 m/s</div>
+    <div id="altitude">Altitude: Loading...</div>
+    <div id="distance">Distance: 0 meters</div>
+    <div id="maxSpeed">Max Speed: 0 m/s</div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <script>
+        proj4.defs("EPSG:21781", "+proj=tmerc +lat_0=46.95240555555556 +lon_0=7.439583333333333 +k=1 +x_0=2600000 +y_0=1200000 +datum=WGS84 +units=m +no_defs");
+
+        var map = L.map('map').setView([46.57591, 7.84956], 8);
+        const tilelayer = new L.tileLayer('https://wmts20.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg');
+        map.addLayer(tilelayer);
+
+        const logs = document.querySelector('#coords');
+        let polyline = L.polyline([], { color: 'blue' }).addTo(map);
+        let marker;
+        const speedDisplay = document.querySelector('#speed');
+        const altitudeDisplay = document.querySelector('#altitude');
+        const distanceDisplay = document.querySelector('#distance');
+        const maxSpeedDisplay = document.querySelector('#maxSpeed');
+        let lastPosition = null;
+        let lastTime = null;
+        let totalDistance = 0;
+        let maxSpeed = 0;
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371000;
+            const latitude1 = lat1 * Math.PI / 180;
+            const latitude2 = lat2 * Math.PI / 180;
+            const deltaLatitude = (lat2 - lat1) * Math.PI / 180;
+            const deltaLongitude = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(deltaLatitude / 2) * Math.sin(deltaLatitude / 2) +
+                Math.cos(latitude1) * Math.cos(latitude2) *
+                Math.sin(deltaLongitude / 2) * Math.sin(deltaLongitude / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        function calculateSpeed(lat1, lon1, lat2, lon2, time1, time2) {
+            const distance = calculateDistance(lat1, lon1, lat2, lon2);
+            const timeDiff = (time2 - time1) / 1000;
+            return distance / timeDiff;
+        }
+
+        async function getAltitude(lat, lon) {
+            const wgs84 = [lon, lat];
+            const lv03 = proj4('EPSG:4326', 'EPSG:21781', wgs84);
+            const easting = lv03[0];
+            const northing = lv03[1];
+            const url = `https://api3.geo.admin.ch/rest/services/height?easting=${easting}&northing=${northing}`;
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                return data.height;
+            } catch (error) {
+                console.error("Fehler beim Abrufen der Höhe:", error);
+                return "N/A";
+            }
+        }
+
+        document.querySelector('#locate').addEventListener('click', () => {
+            navigator.geolocation.watchPosition(async position => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                const time = position.timestamp;
+
+                logs.textContent += `Location: ${lat} lat, ${lng} long\n`;
+                logs.scrollTop = logs.scrollHeight;
+
+                if (lastPosition && lastTime) {
+                    const distance = calculateDistance(lastPosition.lat, lastPosition.lng, lat, lng);
+                    totalDistance += distance;
+                    distanceDisplay.textContent = `Distance: ${totalDistance.toFixed(2)} meters`;
+
+                    const speed = calculateSpeed(lastPosition.lat, lastPosition.lng, lat, lng, lastTime, time);
+                    speedDisplay.textContent = `Speed: ${speed.toFixed(2)} m/s`;
+
+                    if (speed > maxSpeed) {
+                        maxSpeed = speed;
+                        maxSpeedDisplay.textContent = `Max Speed: ${maxSpeed.toFixed(2)} m/s`;
+                    }
+                }
+
+                if (!marker) {
+                    marker = L.marker([lat, lng]).addTo(map);
+                } else {
+                    marker.setLatLng([lat, lng]);
+                }
+                polyline.addLatLng([lat, lng]);
+                map.setView([lat, lng], 12);
+
+                lastPosition = { lat, lng };
+                lastTime = time;
+
+                const altitude = await getAltitude(lat, lng);
+                altitudeDisplay.textContent = `Altitude: ${altitude} meters`;
+            }, error => {
+                console.error("Geolocation-Fehler:", error);
+            });
+        });
+    </script>
+</body>
+</html>
