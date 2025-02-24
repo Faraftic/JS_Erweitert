@@ -108,6 +108,11 @@
         }
 
         document.querySelector('#locate').addEventListener('click', () => {
+            if (!navigator.geolocation) {
+                alert("Geolocation is not supported by your browser");
+                return;
+            }
+            
             navigator.geolocation.watchPosition(async position => {
                 const lat = position.coords.latitude;
                 const lng = position.coords.longitude;
