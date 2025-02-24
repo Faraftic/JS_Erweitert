@@ -97,7 +97,7 @@
                         time: {
                             unit: 'second'
                         },
-                        adapter: 'date-fns' // Use date-fns adapter
+                        adapter: 'date-fns' 
                     },
                     y: {
                         beginAtZero: true
@@ -168,7 +168,6 @@
                         maxSpeedDisplay.textContent = `Max Speed: ${maxSpeed.toFixed(2)} m/s`;
                     }
 
-                    // Update speed chart
                     speedData.labels.push(new Date(time));
                     speedData.datasets[0].data.push(speed);
                     speedChart.update();
