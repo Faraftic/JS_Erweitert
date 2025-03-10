@@ -53,6 +53,7 @@
     <div id="distance">Distance: 0 meters</div>
     <div id="maxSpeed">Max Speed: 0 m/s</div>
     <canvas id="speedChart" width="400" height="200"></canvas>
+    <canvas id="altitudeChart" width="400" height="200"></canvas>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -87,6 +88,17 @@
             }]
         };
 
+        const altitudeData = {
+            labels: [],
+            datasets: [{
+                label: 'Altitude (m)',
+                data: [],
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 1,
+                fill: false
+            }]
+        };
+
         const speedChart = new Chart(document.getElementById('speedChart'), {
             type: 'line',
             data: speedData,
@@ -101,6 +113,26 @@
                     },
                     y: {
                         beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        const altitudeChart = new Chart(document.getElementById('altitudeChart'), {
+            type: 'line',
+            data: altitudeData,
+            options: {
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            unit: 'second'
+                        },
+                        adapter: 'date-fns'
+                    },
+                    y: {
+                        suggestedMin: 300, // Adjust this value based on your expected altitude range
+                        suggestedMax: 800 // Adjust this value based on your expected altitude range
                     }
                 }
             }
@@ -186,6 +218,10 @@
 
                 const altitude = await getAltitude(lat, lng);
                 altitudeDisplay.textContent = `Altitude: ${altitude} meters`;
+
+                altitudeData.labels.push(new Date(time));
+                altitudeData.datasets[0].data.push(altitude);
+                altitudeChart.update();
             }, error => {
                 console.error("Geolocation-Fehler:", error);
                 alert("Unable to retrieve your location. Please check your device settings.");
