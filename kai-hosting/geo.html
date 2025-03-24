@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wanderweg-Tracking</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/@turf/turf"></script> <!-- Turf.js für Geometrie-Berechnungen -->
+    <style>
+        #map {
+            height: 500px;
+        }
+
+        textarea {
+            width: 80vw;
+            height: 200px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+    <button id="locate">Start Tracking</button>
+    <textarea id="coords" readonly></textarea>
+
+    <script>
+        var map = L.map('map').setView([46.57591, 7.84956], 10);
+
+        const url = 'https://wmts20.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg';
+        L.tileLayer(url).addTo(map);
+
+        let logs = document.getElementById('coords');
+        let marker = null;
+        let polyline = L.polyline([], { color: 'blue' }).addTo(map);
+        let wanderwegeLayer = null;
+
+        // 📌 Wanderwege von geo.admin.ch laden
+        async function loadWanderwege() {
+            const wanderwegeURL = "https://data.geo.admin.ch/ch.swisstopo.swisstlm3d-wanderwege/ch.swisstopo.swisstlm3d-wanderwege_en.json";
+
+            try {
+                const response = await fetch(wanderwegeURL);
+                const wanderwegeData = await response.json();
+                wanderwegeLayer = L.geoJSON(wanderwegeData, { color: 'green' }).addTo(map);
+            } catch (error) {
+                console.error("Fehler beim Laden der Wanderwege:", error);
+            }
+        }
+
+        // 🧭 Standort-Tracking mit Abweichungsprüfung
+        function trackMe() {
+            if (!navigator.geolocation) {
+                alert("Geolocation wird nicht unterstützt.");
+                return;
+            }
+
+            navigator.geolocation.watchPosition(position => {
+                const { latitude, longitude } = position.coords;
+                logs.textContent += `Location: ${latitude}, ${longitude}\n`;
+                logs.scrollTop = logs.scrollHeight;
+
+                polyline.addLatLng([latitude, longitude]);
+                map.setView([latitude, longitude], 14);
+
+                if (!marker) {
+                    marker = L.marker([latitude, longitude]).addTo(map);
+                } else {
+                    marker.setLatLng([latitude, longitude]);
+                }
+
+                checkDeviation(latitude, longitude);
+            }, error => {
+                console.error("Fehler bei der Standortermittlung:", error);
+            });
+        }
+
+        // 📏 Entfernung zum nächsten Wanderweg berechnen
+        function checkDeviation(lat, lon) {
+            if (!wanderwegeLayer) return;
+
+            let userPoint = turf.point([lon, lat]);
+            let minDistance = Infinity;
+
+            wanderwegeLayer.eachLayer(layer => {
+                if (layer.feature.geometry.type === "LineString") {
+                    let line = turf.lineString(layer.feature.geometry.coordinates);
+                    let distance = turf.pointToLineDistance(userPoint, line, { units: "meters" });
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                    }
+                }
+            });
+
+            if (minDistance > 20) { // ⚠ Warnung ab 20m Abweichung
+                alert("⚠ Achtung! Du bist vom Wanderweg abgekommen.");
+            }
+        }
+
+        document.getElementById('locate').addEventListener('click', trackMe);
+        loadWanderwege(); // Lade Wanderwege beim Start
+
+    </script>
+</body>
+
+</html>

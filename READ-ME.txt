@@ -1,0 +1,38 @@
+GPS-Tracker Statistics
+
+Wie setze ich das Projekt bei mir Lokal auf?
+
+1. Öffnen sie den Explorer und gehen Sie zum gewünschten Speicherort des Projektes.
+
+2. Drücken Sie nun auf den Pfad im Explorer und geben sie dort "cmd" ein.
+
+3. Es sollte nun ein Konsolenfenster erschienen sein. Geben Sie dort folgendes ein: 
+git clone https://github.com/Faraftic/JS_Erweitert
+
+3.F Im falle einer Fehler Meldung in dieser art: "unbekannter Befehl: git", gehen Sie bitte auf folgende Webseite und Installieren Sie Git indem sie auf "Git installieren" drücken.
+
+4. Nach dem Download mit Hilfe von "git clone" können wir nun in den Projekt Ordner wechseln. Geben Sie dazu folgendes ein (jede Zeile einzeln):
+cd JS_Erweitert
+cd maps-geolocation-Extended
+code .
+
+5. Wechseln Sie in das nun erschienene Visual Studio Code Fenster und Drücken Sie CTRL+SHIFT+X zum öffnen der Extensions.
+
+6. Suchen Sie nach der Extension Live Server und installiere Sie.
+
+7. Drücken Sie nun CTRL+SHIFT+E oder öffnen Sie oben Links den Explorer. Starten Sie nun den Live Server indem Sie unten Rechts auf "Go Live".
+Es sollte nun ein Browser Fenster erschienen sein.
+
+WICHTIG! Lassen Sie den Standort zu!
+
+8. Drücken Sie nun auf Start Tracking und Sie sind Startbereit
+
+8.F Falls nichts passieren sollte verwenden Sie bitte einen anderen Browser oder greifen Sie auf das Projekt Online über mein Github Repository zu:
+https://faraftic.github.io/JS_Erweitert/maps-geolocation-extended/
+
+
+
+Danke für das Austesten meines Projektes :)
+- Nils Chenet
+
+
